@@ -1,5 +1,17 @@
 use git2::Repository;
 use std::error::Error;
+use std::path::Path;
+
+fn initialize_new_repo(new_repo_path: &str) -> Result<Repository, Box<dyn Error>> {
+    if Path::new(new_repo_path).exists() {
+        println!("Target directory exists, using it...");
+    } else {
+        std::fs::create_dir_all(new_repo_path)?;
+    }
+
+    let new_repo = Repository::init(new_repo_path)?;
+    Ok(new_repo)
+}
 
 fn get_commit_history(repo_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let repo = Repository::open(repo_path)?;
@@ -18,14 +30,21 @@ fn get_commit_history(repo_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: autocommitter <source_repo_path>");
+    if args.len() < 3 {
+        eprintln!("Usage: autocommitter <source_repo_path> <new_repo_path>");
         return;
     }
 
     let source_repo_path = &args[1];
+    let new_repo_path = &args[2];
+    
     match get_commit_history(source_repo_path) {
         Ok(commits) => println!("Commits: {:?}", commits),
+        Err(e) => println!("Error: {:?}", e),
+    }
+
+    match initialize_new_repo(new_repo_path) {
+        Ok(_) => println!("New repository initialized."),
         Err(e) => println!("Error: {:?}", e),
     }
 }
