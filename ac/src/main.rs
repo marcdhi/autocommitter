@@ -3,6 +3,29 @@ use std::error::Error;
 use std::path::Path;
 use std::time::Duration;
 use std::thread::sleep;
+use std::process::Command;
+
+fn push_to_github(repo_path: &str, remote_url: &str) -> Result<(), Box<dyn Error>> {
+    Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .arg("remote")
+        .arg("add")
+        .arg("origin")
+        .arg(remote_url)
+        .output()?;
+
+    Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .arg("push")
+        .arg("-u")
+        .arg("origin")
+        .arg("main")
+        .output()?;
+
+    Ok(())
+}
 
 fn apply_commits_with_delay(
     source_commits: Vec<String>,
@@ -60,13 +83,14 @@ fn get_commit_history(repo_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() < 3 {
-        eprintln!("Usage: autocommitter <source_repo_path> <new_repo_path>");
+    if args.len() < 4 {
+        eprintln!("Usage: autocommitter <source_repo_path> <new_repo_path> <remote_url>");
         return;
     }
 
     let source_repo_path = &args[1];
     let new_repo_path = &args[2];
+    let new_repo_url = &args[3];
 
     match get_commit_history(source_repo_path) {
         Ok(commits) => println!("Commits: {:?}", commits),
