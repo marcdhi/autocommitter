@@ -81,24 +81,23 @@ fn get_commit_history(repo_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
     Ok(commits)
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 4 {
         eprintln!("Usage: autocommitter <source_repo_path> <new_repo_path> <remote_url>");
-        return;
+        return Ok(());
     }
 
     let source_repo_path = &args[1];
     let new_repo_path = &args[2];
     let new_repo_url = &args[3];
 
-    match get_commit_history(source_repo_path) {
-        Ok(commits) => println!("Commits: {:?}", commits),
-        Err(e) => println!("Error: {:?}", e),
-    }
+    let source_commits = get_commit_history(source_repo_path)?;
+    let new_repo = initialize_new_repo(new_repo_path)?;
 
-    match initialize_new_repo(new_repo_path) {
-        Ok(_) => println!("New repository initialized."),
-        Err(e) => println!("Error: {:?}", e),
-    }
+    apply_commits_with_delay(source_commits, &new_repo)?;
+    push_to_github(new_repo_path, new_repo_url)?;
+
+    println!("AutoCommitter: Successfully recreated commits in new repository.");
+    Ok(())
 }
