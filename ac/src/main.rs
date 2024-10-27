@@ -1,8 +1,13 @@
 use git2::Repository;
 use std::error::Error;
 use std::path::Path;
+use std::time::Duration;
+use std::thread::sleep;
 
-fn apply_commits(source_commits: Vec<String>, new_repo: &Repository) -> Result<(), Box<dyn Error>> {
+fn apply_commits_with_delay(
+    source_commits: Vec<String>,
+    new_repo: &Repository,
+) -> Result<(), Box<dyn Error>> {
     for commit_message in source_commits {
         let mut index = new_repo.index()?;
         let tree_oid = index.write_tree()?;
@@ -19,10 +24,13 @@ fn apply_commits(source_commits: Vec<String>, new_repo: &Repository) -> Result<(
             &tree,
             &[],
         )?;
+        println!("Commit added: {}", commit_message);
+
+        sleep(Duration::from_secs(3600));  // 3600 seconds = 1 hour
     }
+
     Ok(())
 }
-
 
 fn initialize_new_repo(new_repo_path: &str) -> Result<Repository, Box<dyn Error>> {
     if Path::new(new_repo_path).exists() {
